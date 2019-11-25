@@ -47,8 +47,8 @@ c     outpost arrays
 
       logical if_fltv
 
-      ncut = param(101)+1
-
+      
+      ncut = param(101)+1.0
       if(wght.le.0) return
       if(ifaxis) call exitti('Filtering not supported w/ IFAXIS!$',1)
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',
@@ -59,7 +59,7 @@ c     outpost arrays
       jmax = iglmax(imax,1)
       if (icalld.eq.0) then
          icalld = 1
-         call build_new_filter(intv,zgm1,lx1,ncut,wght,nio)
+         call build_gamma_filter(intv,zgm1,lx1,ncut,wght,nio)
       elseif (icalld.lt.0) then   ! old (std.) filter
          icalld = 1
          call zwgll(zgmv,wgtv,lxv)
@@ -1155,6 +1155,75 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine build_gamma_filter(intv,zpts,nx,kut,wght,nio)
+
+      real intv(nx,nx),zpts(nx)
+c    
+      parameter (lm=40)
+      parameter (lm2=lm*lm)
+      real      phi(lm2),pht(lm2),diag(lm2),rmult(lm),Lj(lm),de,nu
+      integer   indr(lm),indc(lm),ipiv(lm)
+
+c
+      if (nx.gt.lm) then
+         write(6,*) 'ABORT in build_new_filter:',nx,lm
+         call exitt
+      endif
+c
+      kj = 0
+      n  = nx-1
+      do j=1,nx
+         z = zpts(j)
+         call legendre_poly(Lj,z,n)
+         kj = kj+1
+         pht(kj) = Lj(1)
+         kj = kj+1
+         pht(kj) = Lj(2)
+         do k=3,nx
+            kj = kj+1
+            pht(kj) = Lj(k)-Lj(k-2)
+         enddo
+      enddo
+      call transpose (phi,nx,pht,nx)
+      call copy      (pht,phi,nx*nx)
+      call gaujordf  (pht,nx,nx,indr,indc,ipiv,ierr,rmult)
+c
+c     Set up transfer function
+c
+      call ident   (diag,nx)
+c
+      k0 = nx-kut
+c      inicialize
+      do k=0,1
+         kk = k+1+nx*(k)
+         diag(kk) = 1.0
+      enddo
+      
+c----- Define transfer function      
+      do k=2,(nx-1)
+         kk = k+1+nx*(k)
+	 de=k
+	 nu=k0
+         diag(kk) = 1.0/(1.0+(de/nu)**wght)
+      enddo
+c
+      call mxm  (diag,nx,pht,nx,intv,nx)      !          -1
+      call mxm  (phi ,nx,intv,nx,pht,nx)      !     V D V
+      call copy (intv,pht,nx*nx)
+c
+      do k=1,nx*nx
+         pht(k) = 1.-diag(k)
+      enddo
+      np1 = nx+1
+      if (nio.eq.0) then
+         write(6,6) 'filt amp',(pht (k),k=1,nx*nx,np1)
+         write(6,6) 'filt trn',(diag(k),k=1,nx*nx,np1)
+   6     format(a8,16f7.4,6(/,8x,16f7.4))
+      endif
+c
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine avg_all
 c
 c     This routine computes running averages E(X),E(X^2),E(X*Y)
@@ -2143,22 +2212,22 @@ c
         if (nio.eq.0) then
           if (if3d.or.ifaxis) then
            if (ifdout) then
-            write(6,6) istep,time,dragx(i),dragpx(i),dragvx(i),i,'dragx'
-            write(6,6) istep,time,dragy(i),dragpy(i),dragvy(i),i,'dragy'
-            write(6,6) istep,time,dragz(i),dragpz(i),dragvz(i),i,'dragz'
+            write(6,*) istep,time,dragx(i),dragpx(i),dragvx(i),i,'dragx'
+            write(6,*) istep,time,dragy(i),dragpy(i),dragvy(i),i,'dragy'
+            write(6,*) istep,time,dragz(i),dragpz(i),dragvz(i),i,'dragz'
            endif
            if (iftout) then
-            write(6,6) istep,time,torqx(i),torqpx(i),torqvx(i),i,'torqx'
-            write(6,6) istep,time,torqy(i),torqpy(i),torqvy(i),i,'torqy'
-            write(6,6) istep,time,torqz(i),torqpz(i),torqvz(i),i,'torqz'
+            write(6,*) istep,time,torqx(i),torqpx(i),torqvx(i),i,'torqx'
+            write(6,*) istep,time,torqy(i),torqpy(i),torqvy(i),i,'torqy'
+            write(6,*) istep,time,torqz(i),torqpz(i),torqvz(i),i,'torqz'
            endif
           else
            if (ifdout) then
-            write(6,6) istep,time,dragx(i),dragpx(i),dragvx(i),i,'dragx'
-            write(6,6) istep,time,dragy(i),dragpy(i),dragvy(i),i,'dragy'
+            write(6,*) istep,time,dragx(i),dragpx(i),dragvx(i),i,'dragx'
+            write(6,*) istep,time,dragy(i),dragpy(i),dragvy(i),i,'dragy'
            endif
            if (iftout) then
-            write(6,6) istep,time,torqz(i),torqpz(i),torqvz(i),i,'torqz'
+            write(6,*) istep,time,torqz(i),torqpz(i),torqvz(i),i,'torqz'
            endif
           endif
         endif
