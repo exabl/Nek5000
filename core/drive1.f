@@ -1,4 +1,31 @@
 c-----------------------------------------------------------------------
+c> @addtogroup core
+c>
+c> @{
+
+c> Initializes the solver and variables.
+c>
+c> Calls the following subroutines in order:
+c> - `iniparser`: ?
+c> - Session get_session_info(), dnekclock(), opcount() <- 1
+c> - Grid: initdim(), initdat(), files(), dnekclock(), readat()
+c> - Sync: dnekclock_sync(): mpi_barrier() and mpi_wtime()
+c> - Initialize variables: setvar()
+c> - Mesh: setup_topo(), genwz(), usrdat()
+c> - Geometry: gengeom()
+c> - Setup Direct Stiffness Summation (DSS): setup_mesh_dssum(),
+c>   usrdat2(), geom_reset()
+c> - Verify: vrdsmsh()
+c> - Optionals run if the flags are set
+c>   - `dg`: dg_setup()
+c>   - `ifflow`: estrat(). `iftran` set_overlap()
+c>   - `ifcvode`: `False`?
+c> - usrdat3()
+c> - Initial conditions: setics(), setprop()
+c> - User check: `ifneknek`: `False`. userchk(): calculates eddy viscosity
+c> - Misc functions: comment(), sstest(), dofcnt(), in_situ_init(),
+c>   time00(), opcount() <- 2
+c>
       subroutine nek_init(intracomm)
 c
 
@@ -11,7 +38,7 @@ c
       include 'CTIMER'
 
 C     used scratch arrays
-C     NOTE: no initial declaration needed. Linker will take 
+C     NOTE: no initial declaration needed. Linker will take
 c           care about the size of the CBs automatically
 c
 c      COMMON /CTMP1/ DUMMY1(LCTMP1)
@@ -25,7 +52,7 @@ c      COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,4)
 c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
-  
+
       common /rdump/ ntdump
 
       real kwave2
@@ -52,7 +79,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
  12      format(1X,A,4I12,/,/)
-      endif 
+      endif
 
 c      ifsync_ = ifsync
 c      ifsync = .true.
@@ -63,21 +90,21 @@ c      ifsync = .true.
       if (nsteps.eq.0 .and. fintim.eq.0.) instep=0
 
       igeom = 2
-      call setup_topo      ! Setup domain topology  
+      call setup_topo      ! Setup domain topology
 
       call genwz           ! Compute GLL points, weights, etc.
 
       if(nio.eq.0) write(6,*) 'call usrdat'
       call usrdat
-      if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat' 
+      if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat'
 
-      call gengeom(igeom)  ! Generate geometry, after usrdat 
+      call gengeom(igeom)  ! Generate geometry, after usrdat
 
       if (ifmvbd) call setup_mesh_dssum ! Set mesh dssum (needs geom)
 
       if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
-      if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
+      if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2'
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
@@ -86,16 +113,16 @@ c      ifsync = .true.
 
       call bcmask  ! Set BC masks for Dirichlet boundaries.
 
-      if (fintim.ne.0.0.or.nsteps.ne.0) 
+      if (fintim.ne.0.0.or.nsteps.ne.0)
      $   call geneig(igeom) ! eigvals for tolerances
 
       call vrdsmsh     !     Verify mesh topology
 
       call dg_setup    !     Setup DG, if dg flag is set.
 
-      if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
+      if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver
          call estrat                                       ! initialization.
-         if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space 
+         if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space
             call set_overlap                               ! as scratch!
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
             ifemati = .true.
@@ -118,7 +145,7 @@ c      ifsync = .true.
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
-      call setics   !     Set initial conditions 
+      call setics   !     Set initial conditions
       call setprop  !     Compute field properties
 
       if (instep.ne.0) then !USRCHK
@@ -127,13 +154,13 @@ c      ifsync = .true.
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
          call userchk
-         if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
+         if(nio.eq.0) write(6,'(A,/)') ' done :: userchk'
       endif
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
 
       call comment
-      call sstest (isss) 
+      call sstest (isss)
 
       call dofcnt
 
@@ -151,7 +178,7 @@ c      ifsync = .true.
       if (nio.eq.0) then
         write (6,*) ' '
         if (time.ne.0.0) write (6,'(a,e14.7)') ' Initial time:',time
-        write (6,'(a,g13.5,a)') 
+        write (6,'(a,g13.5,a)')
      &              ' Initialization successfully completed ',
      &              tinit, ' sec'
       endif
@@ -161,6 +188,12 @@ c      ifsync = ifsync_ ! restore initial value
       return
       end
 c-----------------------------------------------------------------------
+c> Runs post processing or time advancment based on value of `instep`.
+c> Parent subroutine to nek__multi_advance() which calls nek_advance()
+c> once. Also handles:
+c> - Set flag ::ifoutfld via set_outfld()
+c> - Runs userchk() (for example, eddy viscosity)
+c> - Calls prepost()
       subroutine nek_solve
 
       include 'SIZE'
@@ -171,7 +204,7 @@ c-----------------------------------------------------------------------
       call nekgsync()
 
       if (instep.eq.0) then
-        if(nid.eq.0) write(6,'(/,A,/,A,/)') 
+        if(nid.eq.0) write(6,'(/,A,/,A,/)')
      &     ' nsteps=0 -> skip time loop',
      &     ' running solver in post processing mode'
       else
@@ -186,7 +219,7 @@ c-----------------------------------------------------------------------
 #endif
       call nek_comm_settings(isyc,itime)
 
-      ! start measurements
+c>    start measurements
       call nek_comm_startstat()
       dtmp = dnekgflops()
 
@@ -196,7 +229,7 @@ c-----------------------------------------------------------------------
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
          if(kstep.ge.nsteps) lastep = 1
-         call check_ioinfo  
+         call check_ioinfo
          call set_outfld
          call userchk
          call prepost (ifoutfld,'his')
@@ -210,7 +243,7 @@ c-----------------------------------------------------------------------
 
       call comment
 
-c     check for post-processing mode
+c>    check for post-processing mode
       if (instep.eq.0) then
          nsteps=0
          istep=0
@@ -219,8 +252,8 @@ c     check for post-processing mode
          if(nio.eq.0) write(6,*) 'done :: userchk'
          call prepost (.true.,'his')
       else
-         if (nio.eq.0) write(6,'(/,A,/)') 
-     $      'end of time-step loop' 
+         if (nio.eq.0) write(6,'(/,A,/)')
+     $      'end of time-step loop'
       endif
 
 
@@ -228,6 +261,12 @@ c     check for post-processing mode
       END
 
 c-----------------------------------------------------------------------
+c> Time advancement.
+c> What it does differs based on solver flags and formulation.
+c> Summary of calls:
+c> - userchk_set_xfer()
+c> - fluid(), heat()
+c> - qfilter() with `param(103)`
       subroutine nek_advance
 
       include 'SIZE'
@@ -260,8 +299,8 @@ c-----------------------------------------------------------------------
 
          if (igeom.gt.2) call userchk_set_xfer
 
-         ! call here before we overwrite wx 
-         if (ifheat .and. ifcvode) call heat_cvode (igeom)   
+         ! call here before we overwrite wx
+         if (ifheat .and. ifcvode) call heat_cvode (igeom)
 
          if (ifgeom) then
             call gengeom (igeom)
@@ -270,7 +309,7 @@ c-----------------------------------------------------------------------
 
          if (ifheat) call heat (igeom)
 
-         if (igeom.eq.2) then  
+         if (igeom.eq.2) then
             call setprop
             call rzero(qtl,ntot)
             if (iflomach) call qthermal
@@ -289,8 +328,8 @@ c-----------------------------------------------------------------------
 
             if (igeom.gt.2) call userchk_set_xfer
 
-            ! call here before we overwrite wx 
-            if (ifheat .and. ifcvode) call heat_cvode (igeom)   
+            ! call here before we overwrite wx
+            if (ifheat .and. ifcvode) call heat_cvode (igeom)
 
             if (ifgeom) then
                if (.not.ifrich) call gengeom (igeom)
@@ -321,6 +360,10 @@ c-----------------------------------------------------------------------
       end
 
 c-----------------------------------------------------------------------
+c> Complete simulation
+c> - If zero steps, call runstat() which profiles different components
+c> - Gather scatter library stats: fgslib_crs_stats(xxth(1))
+c> - Finally, in_situ_end() shuts down VisIt with visit_end()
       subroutine nek_end
 
       include 'SIZE'
@@ -331,11 +374,14 @@ c-----------------------------------------------------------------------
       if(instep.ne.0)  call runstat
       if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
 
-   
+
       call in_situ_end()
       return
       end
+
 c-----------------------------------------------------------------------
+c> Multi-level time advancement.
+c> Calls nek_advance() `msteps` times
       subroutine nek__multi_advance(kstep,msteps)
 
       include 'SIZE'
@@ -354,3 +400,4 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+c> }@
