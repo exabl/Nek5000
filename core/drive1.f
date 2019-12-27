@@ -266,7 +266,7 @@ c> What it does differs based on solver flags and formulation.
 c> Summary of calls:
 c> - userchk_set_xfer()
 c> - fluid(), heat()
-c> - qfilter() with `param(103)`
+c> - q_filter() with `param(103)`
       subroutine nek_advance
 
       include 'SIZE'
@@ -401,3 +401,4 @@ c> Calls nek_advance() `msteps` times
       end
 c-----------------------------------------------------------------------
 c> }@
+
