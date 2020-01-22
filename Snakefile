@@ -1,7 +1,14 @@
-#  TOOLS = glob_wildcards('tools/{tool}').tool
-#  TOOLS = [content.name for content in Path("tools/").iterdir() if content.is_dir()]
-configfile: "../../Snakeconfig.yml"
+import os
+from socket import gethostname
+
+from abl import Output
+
+
+HOST = os.getenv("SNIC_RESOURCE", gethostname())
+configfile: Output().root / "etc" / f"{HOST}.yml"
+
 MAKETOOLS=f"CC={config['CC']} FC={config['FC']} CFLAGS='{config['CFLAGS']}' FFLAGS='{config['FFLAGS']}' ./maketools"
+
 
 rule tools:
     params:
