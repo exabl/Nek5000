@@ -1,11 +1,10 @@
 import os
 from socket import gethostname
 
-from abl import Output
+from abl import get_configfile
 
 
-HOST = os.getenv("SNIC_RESOURCE", gethostname())
-configfile: Output().root / "etc" / f"{HOST}.yml"
+configfile: get_configfile()
 
 MAKETOOLS=f"CC={config['CC']} FC={config['FC']} CFLAGS='{config['CFLAGS']}' FFLAGS='{config['FFLAGS']}' ./maketools"
 
