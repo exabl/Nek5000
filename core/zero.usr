@@ -1,4 +1,6 @@
 c-----------------------------------------------------------------------
+c> @defgroup zero The user-file template
+c> @{
 c  nek5000 user-file template
 c
 c  user specified routines:
@@ -160,3 +162,4 @@ c      implicit none
 
       return
       end
+c> @}

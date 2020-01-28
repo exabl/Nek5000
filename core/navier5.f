@@ -701,6 +701,9 @@ c
       return
       end
 c-----------------------------------------------------------------------
+c> Uses mxm() to compute gradient of 3D arrays
+c> @ingroup postpro
+c> @callgraph
       subroutine local_grad3(ur,us,ut,u,N,e,D,Dt)
 c     Output: ur,us,ut         Input:u,N,e,D,Dt
       real ur(0:N,0:N,0:N),us(0:N,0:N,0:N),ut(0:N,0:N,0:N)
@@ -720,6 +723,9 @@ c
       return
       end
 c-----------------------------------------------------------------------
+c> Uses mxm() to compute gradient of 2D arrays
+c> @ingroup postpro
+c> @callgraph
       subroutine local_grad2(ur,us,u,N,e,D,Dt)
 c     Output: ur,us         Input:u,N,e,D,Dt
       real ur(0:N,0:N),us(0:N,0:N)

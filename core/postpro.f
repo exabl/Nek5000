@@ -1,3 +1,4 @@
+c> @defgroup postpro Utilities for postprocessing and computing derived variables
       subroutine load_fld(string)
 
       include 'SIZE'
@@ -16,6 +17,8 @@
       return
       end
 c-----------------------------------------------------------------------
+c> Generate Lambda-2 vortex of Jeong & Hussein, JFM '95
+c> @ingroup postpro
       subroutine lambda2(l2)
 c
 c     Generate Lambda-2 vortex of Jeong & Hussein, JFM '95
@@ -246,6 +249,9 @@ c
       return
       end
 c-----------------------------------------------------------------------
+c> Compute the gradient tensor G_ij := du_i/du_j,  for element e
+c> @ingroup postpro
+c> @callgraph
       subroutine comp_gije(gije,u,v,w,e)
 c
 c                                         du_i
@@ -511,6 +517,10 @@ c
       return
       end
 c-----------------------------------------------------------------------
+c> Compute symmetric part of a tensor G_ij for element e
+c>
+c> @ingroup postpro
+c> @callgraph
       subroutine comp_sije(gije)
 c
 c     Compute symmetric part of a tensor G_ij for element e
@@ -893,7 +903,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine gen_re2_curve(imid)
 
-c     This routine is complex because we must first count number of 
+c     This routine is complex because we must first count number of
 c     nontrivial curved sides.
 
 c     A two pass strategy is used:  first count, then write

@@ -25,7 +25,7 @@ c> - Initial conditions: setics(), setprop()
 c> - User check: `ifneknek`: `False`. userchk(): calculates eddy viscosity
 c> - Misc functions: comment(), sstest(), dofcnt(), in_situ_init(),
 c>   time00(), opcount() <- 2
-c>
+c> @callgraph
       subroutine nek_init(intracomm)
 c
 
@@ -194,6 +194,7 @@ c> once. Also handles:
 c> - Set flag ::ifoutfld via set_outfld()
 c> - Runs userchk() (for example, eddy viscosity)
 c> - Calls prepost()
+c> @callgraph
       subroutine nek_solve
 
       include 'SIZE'
@@ -267,6 +268,7 @@ c> Summary of calls:
 c> - userchk_set_xfer()
 c> - fluid(), heat()
 c> - q_filter() with `param(103)`
+c> @callgraph
       subroutine nek_advance
 
       include 'SIZE'
@@ -364,6 +366,7 @@ c> Complete simulation
 c> - If zero steps, call runstat() which profiles different components
 c> - Gather scatter library stats: fgslib_crs_stats(xxth(1))
 c> - Finally, in_situ_end() shuts down VisIt with visit_end()
+c> @callgraph
       subroutine nek_end
 
       include 'SIZE'
