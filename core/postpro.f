@@ -517,10 +517,13 @@ c
       return
       end
 c-----------------------------------------------------------------------
-c> Compute symmetric part of a tensor G_ij for element e
-c>
+c> Compute symmetric part of a tensor gije for element.
+c> Does not call any other subroutine, but simply evaluates:
+c> \f[ G_{ij} = \frac{1}{2}(G_{ij} + G_{ji}) \f]
+c> \f[ G_{ji} = G_{ij} \f]
+c> @param[inout] gije a 3D array whose first index iterates over all points
+c>    in an element
 c> @ingroup postpro
-c> @callgraph
       subroutine comp_sije(gije)
 c
 c     Compute symmetric part of a tensor G_ij for element e
