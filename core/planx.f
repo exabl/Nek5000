@@ -1,3 +1,7 @@
+c> @ingroup core
+c> Compute pressure and velocity using consistent approximation spaces.     
+c> Operator splitting technique.
+c> @callgraph
       SUBROUTINE PLAN3 (IGEOM)
 C-----------------------------------------------------------------------
 C

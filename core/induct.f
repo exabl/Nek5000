@@ -278,6 +278,9 @@ c
       return
       end
 c--------------------------------------------------------------------
+c> Project U onto the closest incompressible field
+c> @ingroup core
+c> @callgraph
       subroutine incomprn (ux,uy,uz,up)
 c
 c     Project U onto the closest incompressible field
