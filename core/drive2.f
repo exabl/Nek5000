@@ -584,7 +584,7 @@ C     Set time step.
 C
       DO 10 ILAG=10,2,-1
          DTLAG(ILAG) = DTLAG(ILAG-1)
-10   CONTINUE
+10    CONTINUE
       CALL SETDT
       DTLAG(1) = DT
       IF (ISTEP.EQ.1 .and. irst.le.0) DTLAG(2) = DT
