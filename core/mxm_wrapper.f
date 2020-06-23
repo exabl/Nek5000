@@ -1,3 +1,7 @@
+c> Compute matrix-matrix product C = A*B
+c> for contiguously packed matrices A,B, and C.
+c> @ingroup postpro
+c> @callgraph
       subroutine mxm(a,n1,b,n2,c,n3)
 c
 c     Compute matrix-matrix product C = A*B

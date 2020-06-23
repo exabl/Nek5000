@@ -1422,6 +1422,13 @@ C
       return
       END
 C
+c> @ingroup core
+c> Compute and add
+c>
+c> 1. user specified forcing function (FX,FY,FZ)
+c> 2. driving force due to natural convection
+c> 3. convection term
+c> @callgraph
       subroutine makef
 C---------------------------------------------------------------------
 C
