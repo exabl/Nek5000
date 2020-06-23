@@ -481,7 +481,6 @@ c        stabilization type: none, explicit or hpfrt
          if (ifnd .eq. 1) then
             dtmp = anint(lx1*(1.0 - d_out)) 
             param(101) = max(dtmp-1,0.0)
-            write(6,*) param(101), d_out,lx1, '?????'
             if (abs(1.0 - d_out).lt.0.01) filterType = 0
          else
             write(6,*) 'general:filterCutoffRatio'
