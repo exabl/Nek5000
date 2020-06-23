@@ -1,3 +1,4 @@
 .snakemake
 tools/*/*.o
+tools/*/build.log
 tools/amg_hypre
