@@ -1,10 +1,10 @@
 import os
 from socket import gethostname
 
-from abl import get_configfile
+from abl.output import OutputABL as Output
 
 
-configfile: get_configfile()
+configfile: Output.get_configfile()
 
 MAKETOOLS=f"CC={config['CC']} FC={config['FC']} CFLAGS='{config['CFLAGS']}' FFLAGS='{config['FFLAGS']}' ./maketools"
 
@@ -47,8 +47,7 @@ rule gslib:
         "3rd_party/gslib/lib/libgs.a"
     shell:
         """
-        source core/makenek.inc
         pushd 3rd_party/gslib
-        CC={config[CC]} CFLAGS={config[CFLAGS]} ./install
+        CC={config[MPICC]} CFLAGS={config[CFLAGS]} ./install
         popd
         """
