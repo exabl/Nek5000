@@ -1,6 +1,8 @@
 amg_hypre
 genbox
+gencon
 genmap
+gmsh2nek
 n2to3
 nekmerge
 postex

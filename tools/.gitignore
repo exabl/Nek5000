@@ -1,1 +1,4 @@
 *.tar.gz
+cgns2nek/cgns/cgns
+exo2nek/3rd_party/netcdf
+exo2nek/3rd_party/seacas-exodus
