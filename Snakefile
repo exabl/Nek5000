@@ -35,7 +35,7 @@ rule _tool:
 rule tools_clean:
     shell:
         """
-        rm -rf 3rd_party/gslib/lib 3rd_party/gslib/gslib-1.0.1
+        rm -rf 3rd_party/gslib/gslib
         cd tools/
         ./maketools clean
         """
@@ -44,7 +44,7 @@ rule tools_clean:
 # makenek takes care of gslib building using the bash function make_3rd_party
 rule gslib:
     output:
-        "3rd_party/gslib/lib/libgs.a"
+        "3rd_party/gslib/gslib/build/lib/libgs.a"
     shell:
         """
         source core/makenek.inc
