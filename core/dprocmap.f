@@ -75,12 +75,6 @@ c-----------------------------------------------------------------------
 
       integer*8 disp
 
-      ! local cache
-      parameter (lcr = lelt)                      ! remote elements
-      parameter (lc = lelt+lcr+8-mod(lelt+lcr,8)) ! multiple of 8
-      integer   cache(lc,3)
-      save      cache
-
       save icalld
       data icalld /0/
 
@@ -95,7 +89,7 @@ c-----------------------------------------------------------------------
       ii = lsearch_ur(cache(1,3),lc,ieg)
       if (ii.gt.lc) call exitti('lsearch_ur returns invalid index$',ii)
       if (ii.gt.0 .and. ii.ne.lelt+lcr) then ! cache hit
-c         write(6,*) nid, 'cache hit ', 'ieg:', ieg
+         !write(6,*) nid, 'cache hit ', 'ieg:', ieg
          ibuf(1) = cache(ii,1)
          ibuf(2) = cache(ii,2)
       else
@@ -167,6 +161,8 @@ c-----------------------------------------------------------------------
 
       integer ibuf(2)
 
+      if (ieg.eq.0) iegl = 0
+
       if (ieg.eq.iegl) then
          ibuf(2) = nidl
          goto 100
@@ -189,6 +185,8 @@ c-----------------------------------------------------------------------
 
       integer ibuf(2)
 
+      if (ieg.eq.0) iegl = 0
+
       if (ieg.eq.iegl) then
          ibuf(1) = iell
          goto 100
@@ -200,4 +198,18 @@ c-----------------------------------------------------------------------
       gllel = ibuf(1)
 
       end
+c-----------------------------------------------------------------------
+      subroutine dProcMapClearCache 
+
+      include 'SIZE'
+      include 'PARALLEL'
+      include 'DPROCMAP'
+
+      call ifill(cache,-1,size(cache))
+      itmp = gllnid(0) ! reset last element cache
+      itmp = gllel(0)  ! reset last element cache
+
+      end
+c-----------------------------------------------------------------------
+ 
 #endif

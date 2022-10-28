@@ -57,13 +57,13 @@ C     Read Mesh Info
       if (nelgt.gt.350000 .and. .not.ifre2) 
      $   call exitti('Problem size requires .re2!$',1)
 
-      if (ifre2) call read_re2_hdr(ifbswap) ! rank0 will open and read
+      if (ifre2) call read_re2_hdr(ifbswap, .true.) ! rank0 will open and read
       call chk_nel  ! make certain sufficient array sizes
 
-      call mapelpr  ! read .map file, est. gllnid, etc.
+      call mapelpr
 
       if (ifre2) then
-        call read_re2_data(ifbswap)
+        call read_re2_data(ifbswap, .true., .true., .true.)
       else
         maxrd = 32               ! max # procs to read at once
         mread = (np-1)/maxrd+1   ! mod param
@@ -110,9 +110,11 @@ C     End of input data, close read file.
  99   call izero(boundaryID, size(boundaryID))
       call izero(boundaryIDt, size(boundaryIDt))
 
+      ifld = 2 
+      if(ifflow) ifld = 1
       do iel = 1,nelv
       do ifc = 1,2*ndim   
-         boundaryID(ifc,iel) = bc(5,ifc,iel,1)
+         boundaryID(ifc,iel) = bc(5,ifc,iel,ifld)
       enddo
       enddo
 
@@ -154,7 +156,7 @@ c      call  vrdsmshx  ! verify mesh topology
       EPS       = 1.0e-04
       EPS       = 1.0e-03
       IFIELD    = 1
-      IF (IFHEAT) IFIELD = 2
+      if (nelgv.ne.nelgt .or. .not.ifflow) ifield = 2
       NXYZ1     = lx1*ly1*lz1
       NTOT      = lx1*ly1*lz1*NELT
       NFACES    = 2*ldim

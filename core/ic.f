@@ -451,6 +451,7 @@ C     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 9.
       real*4         tdump
 c
       REAL SDMP2(LXYZT,LDIMT)
+      common /cbresdmp/ SDMP2 
 
 c     cdump comes in via PARALLEL (->TOTAL)
 
@@ -491,7 +492,12 @@ c use new reader (only binary support)
       if (p67.eq.6.0) then
          do ifile=1,nfiles
             call sioflag(ndumps,fname,initc(ifile))
-            call mfi(fname,ifile)
+            if(ifgfldr) then
+              call gfldr(fname)
+            else
+              call mfi(fname,ifile)
+            endif
+            ifgfldr=.false. !avoid interfering with future gfldr calls
          enddo
          call bcast(time,wdsize)! Sync time across processors
          return
@@ -1001,6 +1007,7 @@ C
   100 continue
       ifgtim=.true.
       ndumps=0
+      ifgfldr=.false.
 C
 C     Check for default case - just a filename given, no i/o options specified
 C
@@ -1036,6 +1043,11 @@ C           remove the user specified time from the RS options line.
          ENDIF
 
 C        Parse field specifications.
+
+         IGO=INDX_CUT(RSOPT,'INT',3)
+         IF (IGO.NE.0) THEN
+            ifgfldr=.TRUE.
+         ENDIF
 
          IXO=INDX_CUT(RSOPT,'X',1)
          IF (IXO.NE.0) THEN
@@ -1079,8 +1091,10 @@ C        Get number of dumps from remainder of user supplied line.
 
 C     If no fields were explicitly specified, assume getting all fields. 
       if (ifdeft) then
-         IFGETX=.TRUE.
-         IF (IF3D) IFGETZ=.TRUE.
+         if(.not.ifgfldr) then
+           IFGETX=.TRUE.
+           IF (IF3D) IFGETZ=.TRUE.
+         endif
          IFANYC=.FALSE.
          DO 400 I=1,NFIELD
             IF (IFADVC(I)) IFANYC=.TRUE.
@@ -1091,16 +1105,13 @@ C     If no fields were explicitly specified, assume getting all fields.
          ENDIF
          if (ifflow) ifgetp=.true.
          if (ifheat) ifgett=.true.
-#ifdef CMTNEK
-         ifgett=.true. ! CMT-nek still not compatible with IFHEAT
-#endif
          do 410 i=1,ldimt-1
             ifgtps(i)=.TRUE.
   410    continue
       endif
 
-
-
+      if(ifgfldr.and.ifgetx) 
+     & call exitti('"X" and "INT" restart options incompatible!$',0)
 
       return
       END
@@ -1851,6 +1862,7 @@ c
          yc(2,ie) = YM1(lx1,1  ,1  ,ie)
          yc(3,ie) = YM1(lx1,ly1,1  ,ie)
          yc(4,ie) = YM1(1  ,ly1,1  ,ie)
+         yc(5,ie) = YM1(1  ,1  ,lz1,ie)
          yc(6,ie) = YM1(lx1,1  ,lz1,ie)
          yc(7,ie) = YM1(lx1,ly1,lz1,ie)
          yc(8,ie) = YM1(1  ,ly1,lz1,ie)
@@ -2368,12 +2380,14 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
-      character*132 hdr
+      character*132  hdr
       character*132  fname_in
 
       character*132  fname
       character*1    fnam1(132)
       equivalence   (fnam1,fname)
+
+      character*1    frontc
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
@@ -2384,12 +2398,18 @@ c
 
       tiostart=dnekclock()
 
-      ! add path
+      ! add full path if required
       call blank(fname,132)
-      lenp = ltrunc(path,132)
-      lenf = ltrunc(fname_in,132)
-      call chcopy(fnam1(1),path,lenp)
-      call chcopy(fnam1(lenp+1),fname_in,lenf)
+      call chcopy(frontc, fname_in, 1)
+      if (frontc .ne. '/') then
+        lenp = ltrunc(path,132)
+        lenf = ltrunc(fname_in,132)
+        call chcopy(fnam1(1),path,lenp)
+        call chcopy(fnam1(lenp+1),fname_in,lenf)
+      else
+        lenf = ltrunc(fname_in,132)
+        call chcopy(fnam1(1),fname_in,lenf)     
+      endif
 
       call mfi_prepare(fname)       ! determine reader nodes +
                                     ! read hdr + element mapping 
@@ -2486,10 +2506,10 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 
       if (tio.eq.0) tio=1
       if (nio.eq.0) write(6,7) istep,time,
-     &             nbyte/tio/1024/1024/10,
+     &             nbyte/tio/1e9/10,
      &             nfiler
     7 format(/,i9,1pe12.4,' done :: Read checkpoint data',/,
-     &       30X,'avg data-throughput = ',f7.1,'MBps',/,
+     &       30X,'avg data-throughput = ',f7.1,'GB/s',/,
      &       30X,'io-nodes = ',i5,/)
 
 

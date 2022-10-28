@@ -23,6 +23,8 @@ C
       include 'NONCON'
       include 'SCRCT'
 c
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+c      
       COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
      $ ,             YM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
@@ -30,7 +32,7 @@ C
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       integer*8 glo_num
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
+      integer*8 vertex
 
       if(nio.eq.0) write(6,*) 'setup mesh topology'
 C
@@ -79,6 +81,10 @@ C
          call setupds(gsh_fld(1),lx1,ly1,lz1,nelv,nelgv,vertex,glo_num)
          gsh_fld(2)=gsh_fld(1)
 
+         if(nid.eq.0) write(6,*) ''
+         call printPartStat(glo_num,nelt,lx1*ly1*lz1,nekcomm)
+         if(nid.eq.0) write(6,*) ''
+
 c        call gs_counter(glo_num,gsh_fld(1))
 
       else
@@ -125,15 +131,13 @@ C========================================================================
       ntotv = lx1*ly1*lz1*nelv
       ntott = lx1*ly1*lz1*nelt
 
-
-
       if (ifflow) then
          ifield = 1
          call rone    (vmult,ntotv)
          call dssum   (vmult,lx1,ly1,lz1)
          vmltmax=glmax(vmult,ntotv)
          ivmltmax=vmltmax
-         if (nio.eq.0) write(6,*) ivmltmax,' max multiplicity'
+         if (nio.eq.0) write(6,*) 'max multiplicity ', ivmltmax
          call invcol1 (vmult,ntotv)
       endif
       if (ifheat) then
@@ -222,9 +226,6 @@ c-----------------------------------------------------------------------
       subroutine setedge
 C
 C     .Initialize EDGE arrays for face and edge specific tasks.
-C
-C     .NOTE: Sevaral arrays in common are initialized via 
-C            BLOCKDATA EDGEC
 C
 C     Computed arrays: 
 C
@@ -1619,7 +1620,7 @@ c-----------------------------------------------------------------------
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       integer*8 glo_num
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
+      integer*8 vertex
 
       parameter(lxyz=lx1*ly1*lz1)
       common /scrns/ enum(lxyz,lelt)
@@ -1627,6 +1628,7 @@ c-----------------------------------------------------------------------
      $             ,  tnx(lxyz,lelt) , tny(lxyz,lelt) , tnz(lxyz,lelt)
       common /scruz/  snx(lxz) , sny(lxz) , snz(lxz) ,  efc(lxz)
       common /scrsf/  jvrtex((2**ldim),lelt)
+      integer*8 jvrtex,mvertx,i8glmax
 
       integer e,f,eg
 
@@ -1695,8 +1697,8 @@ c     element that both have cbc = msi!
       call opdssum(rnx,rny,rnz)
 
       nv = nel*(2**ldim)
-      call icopy(jvrtex,vertex,nv)  ! Save vertex
-      mvertx=iglmax(jvrtex,nv)
+      call i8copy(jvrtex,vertex,nv)  ! Save vertex
+      mvertx=i8glmax(jvrtex,nv)
 
 
 c     Now, check to see if normal is aligned with incoming normal

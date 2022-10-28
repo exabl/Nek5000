@@ -20,13 +20,13 @@ c
 
       call usrdat0
 
-      call read_re2_hdr(ifbswap)
+      call read_re2_hdr(ifbswap, .true.)
 
       call chkParam
 
       call mapelpr  ! read .map file, est. gllnid, etc.
 
-      call read_re2_data(ifbswap)
+      call read_re2_data(ifbswap, .true., .true., .true.)
 
       call nekgsync()
 
@@ -41,7 +41,7 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
 
-      loglevel = 1
+      loglevel = 2
       optlevel = 1
 
       call rzero(param,200)
@@ -144,6 +144,9 @@ C
       do i=1,ldimt
          idpss(i) = -1
       enddo 
+
+      meshPartitioner=3 ! HYBRID (RSB+RCB)
+      connectivityTol=0.2
 
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
@@ -678,14 +681,9 @@ c set logical flags
             goto 999
          endif
       else if (index(c_out,'COMPNS') .eq. 1) then
-#ifdef CMTNEK
-         continue
-#else
          write(6,*) 'value: ',trim(c_out)
          write(6,*) 'not supported for problemType:equation!'
-         write(6,*) 'Recompile with CMTNEK ...'
          goto 999
-#endif
       else if (index(c_out,'INCOMPMHD') .eq. 1) then
          write(6,*) 'value: ',trim(c_out)
          write(6,*) 'not yet supported for problemType:equation!'
@@ -822,6 +820,22 @@ c set restart options
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
 
+c set partitioner options
+      call finiparser_getString(c_out,'mesh:partitioner',ifnd)
+      call capit(c_out,132)
+      if(index(c_out,'RSB').eq.1) then
+         meshPartitioner=1
+      else if (index(c_out,'RCBRSB').eq.1) then
+         meshPartitioner=3
+      else if(index(c_out,'RCB').eq.1) then
+         meshPartitioner=2
+      else if (index(c_out,'METIS').eq.1) then
+         meshPartitioner=4
+      endif
+
+c set connectivity tolerance
+      call finiparser_getDbl(d_out,'mesh:connectivityTol',ifnd)
+      if(ifnd .eq. 1) connectivityTol = d_out
 
 100   if(ierr.eq.0) call finiparser_dump()
       return
@@ -882,6 +896,10 @@ C
       call bcast(iffilter, ldimt1*lsize)
 
       call bcast(idpss    ,  ldimt*isize)
+
+      call bcast(meshPartitioner,isize)
+      call bcast(connectivityTol,wdsize)
+
       call bcast(iftmsh   , (ldimt1+1)*lsize)
       call bcast(ifprojfld, (ldimt1+1)*lsize)
 
@@ -1052,7 +1070,7 @@ c
       endif
 
       if (lgmres.lt.5 .and. param(42).eq.0) then
-         if(nid.eq.0) write(6,*)
+         if(nid.eq.0 .and. loglevel .gt. 1) write(6,*)
      $   'WARNING: lgmres might be too low!'
       endif
 
@@ -1146,9 +1164,6 @@ c
      $    'for PN/PN-2$'
         call exitt
       endif
-
-      if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)
 
       if (param(99).gt.-1 .and. (lxd.lt.lx1 .or. lyd.lt.ly1 .or.
      &   lzd.lt.lz1)) then

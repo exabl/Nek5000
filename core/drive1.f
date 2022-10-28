@@ -68,7 +68,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       common /c_is1/ glo_num(lx1 * ly1 * lz1, lelt)
       common /ivrtx/ vertex((2 ** ldim) * lelt)
       integer*8 glo_num, ngv
-      integer vertex
+      integer*8 vertex
 
       ! set word size for REAL
       wdsize = sizeof(rtest)
@@ -100,6 +100,13 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call readat          ! Read .rea +map file
 
+      if (nio.eq.0) then
+         write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+         write(6,12) 'lx1/lx2/lx3/lxd: ',lx1,lx2,lx3,lxd
+ 12      format(1X,A,4I12)
+         write(6,*)
+      endif
+
       call setvar          ! Initialize most variables
 
       instep=1             ! Check for zero steps
@@ -123,7 +130,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2'
 
       call fix_geom
-      call geom_reset(1)    ! recompute Jacobians, etc.
 
       call vrdsmsh          ! verify mesh topology
       call mesh_metrics     ! print some metrics
@@ -148,10 +154,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if(nio.eq.0) write(6,*) 'call usrdat3'
       call usrdat3
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat3'
-
-#ifdef CMTNEK
-        call nek_cmt_init
-#endif
 
       call setics
       call setprop
@@ -296,12 +298,6 @@ c> @callgraph
       call setsolv
       call comment
 
-#ifdef CMTNEK
-      if (nio.eq.0.and.istep.le.1) write(6,*) 'CMT branch active'
-      call cmt_nek_advance
-      return
-#endif
-
       if (ifsplit) then   ! PN/PN formulation
 
          do igeom=1,ngeom
@@ -382,6 +378,7 @@ c> @callgraph
 
       include 'SIZE'
       include 'TOTAL'
+      include 'DPROCMAP'
 
       if(instep.ne.0) call runstat
 
@@ -391,6 +388,11 @@ c      else
 c         call fgslib_crs_free(xxth(1))
 c      endif
 
+#ifdef DPROCMAP
+#ifdef MPI
+      call MPI_Win_free(dProcmapH, ierr)
+#endif
+#endif 
       call in_situ_end()
       call exitt0()
 
